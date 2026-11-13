@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";import {db} from "@/lib/db";
+export async function GET(){const trips=await db.trip.findMany({where:{active:true,departureAt:{gt:new Date()}},include:{destination:true,bus:true,seats:true},orderBy:{departureAt:"asc"}});return NextResponse.json({trips});}
