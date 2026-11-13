@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";import {db} from "@/lib/db";import {requireAdmin} from "@/lib/auth";
+export async function POST(req:Request){try{await requireAdmin();const f=await req.formData();await db.destination.create({data:{origin:String(f.get("origin")),destination:String(f.get("destination"))}});return NextResponse.redirect(new URL("/admin/destinations",req.url));}catch{return NextResponse.json({error:"No autorizado o datos inválidos."},{status:400});}}
