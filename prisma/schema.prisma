@@ -1,114 +1,165 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
 
-enum Role { ADMIN EMPLOYEE CUSTOMER }
-enum PaymentStatus { PENDING VERIFIED REJECTED }
-enum BookingStatus { PENDING CONFIRMED REJECTED CANCELLED EXPIRED }
-enum SeatStatus { AVAILABLE HELD BOOKED }
-enum DocumentType { ID_FRONT ID_BACK PAYMENT_PROOF }
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+  CUSTOMER
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum SeatStatus {
+  AVAILABLE
+  HELD
+  BOOKED
+}
+
+enum DocumentType {
+  ID_FRONT
+  ID_BACK
+  PAYMENT_PROOF
+}
 
 model User {
-  id String @id @default(cuid())
-  name String
-  email String @unique
+  id               String   @id @default(cuid())
+  name             String
+  email            String   @unique
   phoneCountryCode String
-  phoneNumber String
-  passwordHash String
-  role Role @default(CUSTOMER)
-  createdAt DateTime @default(now())
-  bookings Booking[]
+  phoneNumber      String
+  passwordHash     String
+  role             Role     @default(CUSTOMER)
+  createdAt        DateTime @default(now())
+  bookings         Booking[]
 }
+
 model Destination {
-  id String @id @default(cuid())
-  origin String
+  id          String   @id @default(cuid())
+  origin      String
   destination String
-  active Boolean @default(true)
-  createdAt DateTime @default(now())
-  trips Trip[]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  trips       Trip[]
 }
+
 model Bus {
-  id String @id @default(cuid())
-  company String
-  name String
-  rows Int
+  id          String   @id @default(cuid())
+  company     String
+  name        String
+  rows        Int
   seatsPerRow Int
-  layout Json
-  active Boolean @default(true)
-  trips Trip[]
+  layout      Json
+  active      Boolean  @default(true)
+  trips       Trip[]
 }
+
 model Trip {
-  id String @id @default(cuid())
+  id            String     @id @default(cuid())
   destinationId String
-  busId String
-  departureAt DateTime
-  priceBRL Decimal @db.Decimal(10,2)
-  priceBOB Decimal @db.Decimal(10,2)
-  active Boolean @default(true)
-  createdAt DateTime @default(now())
-  destination Destination @relation(fields:[destinationId], references:[id])
-  bus Bus @relation(fields:[busId], references:[id])
-  seats TripSeat[]
-  bookings Booking[]
+  busId         String
+  departureAt   DateTime
+  priceBRL      Decimal    @db.Decimal(10, 2)
+  priceBOB      Decimal    @db.Decimal(10, 2)
+  active        Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+
+  destination Destination @relation(fields: [destinationId], references: [id])
+  bus         Bus         @relation(fields: [busId], references: [id])
+  seats       TripSeat[]
+  bookings    Booking[]
+
   @@index([departureAt, active])
 }
+
 model TripSeat {
-  id String @id @default(cuid())
-  tripId String
-  code String
-  status SeatStatus @default(AVAILABLE)
+  id        String     @id @default(cuid())
+  tripId    String
+  code      String
+  status    SeatStatus @default(AVAILABLE)
   holdUntil DateTime?
   bookingId String?
-  trip Trip @relation(fields:[tripId], references:[id])
-  booking Booking? @relation(fields:[bookingId], references:[id])
+
+  trip    Trip     @relation(fields: [tripId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id])
+
   @@unique([tripId, code])
-  @@index([tripId,status,holdUntil])
+  @@index([tripId, status, holdUntil])
 }
+
 model Booking {
-  id String @id @default(cuid())
-  referenceCode String @unique
-  userId String
-  tripId String
-  currency String
-  total Decimal @db.Decimal(10,2)
-  paymentMethod String
-  paymentStatus PaymentStatus @default(PENDING)
-  status BookingStatus @default(PENDING)
-  createdAt DateTime @default(now())
-  verifiedAt DateTime?
-  verifiedBy String?
+  id              String        @id @default(cuid())
+  referenceCode   String        @unique
+  userId          String
+  tripId          String
+  currency        String
+  total           Decimal       @db.Decimal(10, 2)
+  paymentMethod   String
+  paymentStatus   PaymentStatus @default(PENDING)
+  status          BookingStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  verifiedAt      DateTime?
+  verifiedBy      String?
   rejectionReason String?
-  user User @relation(fields:[userId], references:[id])
-  trip Trip @relation(fields:[tripId], references:[id])
+
+  user      User        @relation(fields: [userId], references: [id])
+  trip      Trip        @relation(fields: [tripId], references: [id])
   passengers Passenger[]
-  seats TripSeat[]
+  seats     TripSeat[]
   documents Document[]
   auditLogs AuditLog[]
-  @@index([createdAt,paymentStatus])
+
+  @@index([createdAt, paymentStatus])
 }
+
 model Passenger {
-  id String @id @default(cuid())
+  id        String  @id @default(cuid())
   bookingId String
-  fullName String
-  idNumber String
-  seatCode String
-  booking Booking @relation(fields:[bookingId], references:[id])
+  fullName  String
+  idNumber  String
+  seatCode  String
+
+  booking Booking @relation(fields: [bookingId], references: [id])
 }
+
 model Document {
-  id String @id @default(cuid())
-  bookingId String
+  id          String       @id @default(cuid())
+  bookingId   String
   passengerId String?
-  type DocumentType
-  storageKey String
-  mimeType String
-  createdAt DateTime @default(now())
-  booking Booking @relation(fields:[bookingId], references:[id])
+  type        DocumentType
+  storageKey  String
+  mimeType    String
+  createdAt   DateTime     @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id])
 }
+
 model AuditLog {
-  id String @id @default(cuid())
+  id        String   @id @default(cuid())
   bookingId String
-  actorId String
-  action String
-  detail String?
+  actorId   String
+  action    String
+  detail    String?
   createdAt DateTime @default(now())
-  booking Booking @relation(fields:[bookingId], references:[id])
+
+  booking Booking @relation(fields: [bookingId], references: [id])
 }
+ 
